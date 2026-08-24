@@ -1,0 +1,14 @@
+.idea
+.git
+.gitignore
+.DS_Store
+target
+*.log
+*.iml
+.settings
+.classpath
+.project
+node_modules
+.env
+.env.local
+
