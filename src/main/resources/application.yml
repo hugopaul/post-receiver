@@ -19,3 +19,43 @@ logging:
     max-size: 10MB
     max-history: 10
 
+wordpress:
+  destination:
+    base-url: ${WP_BASE_URL}
+    username: ${WP_USERNAME}
+    application-password: ${WP_APP_PASSWORD}
+    rest-path: ${WP_REST_PATH}
+    connect-timeout-seconds: 15
+    read-timeout-seconds: 120
+  mysql:
+    enabled: ${WP_MYSQL_ENABLED}
+    url: ${WP_MYSQL_URL}
+    username: ${WP_MYSQL_USERNAME}
+    password: ${WP_MYSQL_PASSWORD}
+    table-prefix: ${WP_TABLE_PREFIX}
+  meta:
+    allowed-keys:
+      - _wp_page_template
+      - site-sidebar-layout
+      - site-content-layout
+      - site-content-style
+      - site-sidebar-style
+      - theme-transparent-header-meta
+      - astra-migrate-meta-layouts
+      - cta-cta_manchete
+      - rank_math_primary_category
+      - rank_math_seo_score
+    ignored-keys:
+      - _edit_lock
+      - _edit_last
+      - _thumbnail_id
+      - _wp_old_slug
+      - _encloseme
+      - _pingme
+      - rank_math_internal_links_processed
+      - rank_math_contentai_score
+      - rank_math_analytic_object_id
+      - _elementor_page_assets
+    ignored-prefixes:
+      - _oembed_
+      - _oembed_time_

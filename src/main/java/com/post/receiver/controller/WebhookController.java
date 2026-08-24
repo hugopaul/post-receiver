@@ -1,69 +1,38 @@
 package com.post.receiver.controller;
 
+import com.post.receiver.domain.SourceSite;
+import com.post.receiver.dto.SyncResult;
+import com.post.receiver.dto.webhook.WordPressWebhookPayload;
+import com.post.receiver.service.PostReplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/webhook")
 public class WebhookController {
-    
+
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
-    /**
-     * Endpoint para receber posts do WordPress do site Acorda DF
-     */
+    private final PostReplicationService postReplicationService;
+
+    public WebhookController(PostReplicationService postReplicationService) {
+        this.postReplicationService = postReplicationService;
+    }
+
     @PostMapping("/acordadf")
-    public ResponseEntity<String> receiveAcordaDFPost(@RequestBody Map<String, Object> payload) {
-        log.info("========================================");
-        log.info("POST RECEBIDO DO SITE: ACORDA DF");
-        log.info("========================================");
-        logPostDetails(payload);
-        log.info("========================================");
-        return ResponseEntity.status(HttpStatus.OK).body("Post do Acorda DF recebido com sucesso");
+    public ResponseEntity<SyncResult> receiveAcordaDFPost(@RequestBody WordPressWebhookPayload payload) {
+        log.info("Webhook recebido do Acorda DF");
+        return ResponseEntity.ok(postReplicationService.sincronizar(payload, SourceSite.ACORDA_DF));
     }
 
-    /**
-     * Endpoint para receber posts do WordPress do site DF Mobilidade
-     */
     @PostMapping("/dfmobilidade")
-    public ResponseEntity<String> receiveDFMobilidadePost(@RequestBody Map<String, Object> payload) {
-        log.info("========================================");
-        log.info("POST RECEBIDO DO SITE: DF MOBILIDADE");
-        log.info("========================================");
-        logPostDetails(payload);
-        log.info("========================================");
-        return ResponseEntity.status(HttpStatus.OK).body("Post do DF Mobilidade recebido com sucesso");
-    }
-
-    /**
-     * Método auxiliar para logar os detalhes do payload
-     */
-    private void logPostDetails(Map<String, Object> payload) {
-        log.info("Payload completo: {}", payload);
-        payload.forEach((key, value) -> {
-            if (value instanceof String) {
-                log.info("{}: {}", key, truncateContent((String) value, 200));
-            } else {
-                log.info("{}: {}", key, value);
-            }
-        });
-    }
-
-    /**
-     * Trunca o conteúdo para logging
-     */
-    private String truncateContent(String content, int maxLength) {
-        if (content == null) {
-            return "";
-        }
-        if (content.length() > maxLength) {
-            return content.substring(0, maxLength) + "...";
-        }
-        return content;
+    public ResponseEntity<SyncResult> receiveDFMobilidadePost(@RequestBody WordPressWebhookPayload payload) {
+        log.info("Webhook recebido do DF Mobilidade");
+        return ResponseEntity.ok(postReplicationService.sincronizar(payload, SourceSite.DF_MOBILIDADE));
     }
 }
-

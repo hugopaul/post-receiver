@@ -10,9 +10,17 @@ services:
       - "8085:8085"
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
+      - WP_BASE_URL=https://dentrodoeixo.com.br
+      - WP_USERNAME=
+      - WP_APP_PASSWORD=
+      - WP_MYSQL_ENABLED=true
+      - WP_MYSQL_URL=jdbc:mysql://127.0.0.1:3306/wordpress?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
+      - WP_MYSQL_USERNAME=root
+      - WP_MYSQL_PASSWORD=
+      - WP_TABLE_PREFIX=wp_
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8085/api/health"]
       interval: 30s
       timeout: 3s
       retries: 3
