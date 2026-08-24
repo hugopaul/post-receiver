@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: post-receiver-app
     ports:
-      - "8080:8080"
+      - "8085:8085"
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
     volumes:
