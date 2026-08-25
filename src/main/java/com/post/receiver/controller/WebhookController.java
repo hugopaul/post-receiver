@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tools.jackson.databind.JsonNode;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/webhook")
@@ -34,15 +31,8 @@ public class WebhookController {
     }
 
     @PostMapping("/dfmobilidade")
-    public ResponseEntity<Map<String, String>> receiveDFMobilidadePost(@RequestBody JsonNode payload) {
-        log.info("========================================");
-        log.info("WEBHOOK BRUTO DO DF MOBILIDADE (somente log, sem sync)");
-        log.info("========================================");
-        log.info("Payload DF Mobilidade: {}", payload == null ? "null" : payload.toPrettyString());
-        log.info("========================================");
-        return ResponseEntity.ok(Map.of(
-                "status", "logged",
-                "message", "Payload do DF Mobilidade registrado nos logs"
-        ));
+    public ResponseEntity<SyncResult> receiveDFMobilidadePost(@RequestBody WordPressWebhookPayload payload) {
+        log.info("Webhook recebido do DF Mobilidade");
+        return ResponseEntity.ok(postReplicationService.sincronizar(payload, SourceSite.DF_MOBILIDADE));
     }
 }
