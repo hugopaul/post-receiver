@@ -140,4 +140,3 @@ post-receiver/
 - Spring Boot: 3.3.3 (LTS)
 - Java: 25
 - Maven: 3.6+
-
