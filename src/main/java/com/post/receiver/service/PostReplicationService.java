@@ -2,6 +2,7 @@ package com.post.receiver.service;
 
 import com.post.receiver.client.WordPressApiClient;
 import com.post.receiver.domain.SourceSite;
+import com.post.receiver.dto.CategoryMatchResult;
 import com.post.receiver.dto.SyncResult;
 import com.post.receiver.dto.webhook.SourcePost;
 import com.post.receiver.dto.webhook.WordPressWebhookPayload;
@@ -61,7 +62,22 @@ public class PostReplicationService {
 
         log.info("Iniciando sync [{}] origem={} título={}", sourceSite.displayName(), post.id(), post.title());
 
-        Map<Long, Long> categoryMap = categorySyncService.sincronizar(payload.categories());
+        CategoryMatchResult categoryMatch = categorySyncService.localizarExistentes(payload.categories());
+        if (!categoryMatch.hasExistingCategory()) {
+            String received = categoryMatch.missing().isEmpty()
+                    ? "nenhuma categoria no payload"
+                    : String.join(", ", categoryMatch.missing());
+            log.warn("Post origem {} [{}] não será sincronizado: nenhuma categoria existe no Dentro do Eixo. Categorias recebidas: {}",
+                    post.id(), sourceSite.displayName(), received);
+            return SyncResult.skipped(sourceSite, post.id(), post.title(),
+                    "Categoria não cadastrada no destino: " + received);
+        }
+        if (!categoryMatch.missing().isEmpty()) {
+            log.warn("Post origem {} [{}] segue apenas com categorias já cadastradas {}. Ignoradas: {}",
+                    post.id(), sourceSite.displayName(), categoryMatch.found(), categoryMatch.missing());
+        }
+
+        Map<Long, Long> categoryMap = categoryMatch.sourceToDestinationIds();
         Map<Long, Long> tagMap = tagSyncService.sincronizar(payload.tags());
 
         Optional<Long> existingPostId = findExistingPost(sourceSite, post);
