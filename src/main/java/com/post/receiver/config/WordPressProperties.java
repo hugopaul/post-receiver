@@ -152,7 +152,9 @@ public class WordPressProperties {
                 "astra-migrate-meta-layouts",
                 "cta-cta_manchete",
                 "rank_math_primary_category",
-                "rank_math_seo_score"
+                "rank_math_seo_score",
+                "_seopress_analysis_target_kw",
+                "_seopress_robots_primary_cat"
         ));
         private List<String> ignoredKeys = new ArrayList<>(List.of(
                 "_edit_lock",
@@ -161,10 +163,13 @@ public class WordPressProperties {
                 "_wp_old_slug",
                 "_encloseme",
                 "_pingme",
+                "classic-editor-remember",
                 "rank_math_internal_links_processed",
                 "rank_math_contentai_score",
                 "rank_math_analytic_object_id",
-                "_elementor_page_assets"
+                "_elementor_page_assets",
+                "_seopress_redirections_type",
+                "_seopress_redirections_logged_status"
         ));
         private List<String> ignoredPrefixes = new ArrayList<>(List.of(
                 "_oembed_",

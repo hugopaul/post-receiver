@@ -32,7 +32,9 @@ public class WebhookController {
 
     @PostMapping("/dfmobilidade")
     public ResponseEntity<SyncResult> receiveDFMobilidadePost(@RequestBody WordPressWebhookPayload payload) {
-        log.info("Webhook recebido do DF Mobilidade");
+        log.info("Webhook recebido do DF Mobilidade id={} título={}",
+                payload.post() == null ? null : payload.post().id(),
+                payload.post() == null ? null : payload.post().title());
         return ResponseEntity.ok(postReplicationService.sincronizar(payload, SourceSite.DF_MOBILIDADE));
     }
 }
