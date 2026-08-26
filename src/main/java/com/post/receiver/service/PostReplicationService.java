@@ -3,6 +3,7 @@ package com.post.receiver.service;
 import com.post.receiver.client.WordPressApiClient;
 import com.post.receiver.domain.SourceSite;
 import com.post.receiver.dto.CategoryMatchResult;
+import com.post.receiver.dto.MediaSyncResult;
 import com.post.receiver.dto.SyncResult;
 import com.post.receiver.dto.webhook.SourcePost;
 import com.post.receiver.dto.webhook.WordPressWebhookPayload;
@@ -55,26 +56,19 @@ public class PostReplicationService {
 
         SourcePost post = payload.post();
         if (shouldSkip(post)) {
-            log.info("Post origem {} ignorado (type={}, status={})", post.id(), post.type(), post.status());
-            return SyncResult.skipped(sourceSite, post.id(), post.title(),
-                    "Post ignorado: type=" + post.type() + " status=" + post.status());
+            String reason = "type=" + post.type() + " status=" + post.status();
+            log.info(summarize(sourceSite, "SKIP", post, null, null, null, 0, null, reason));
+            return SyncResult.skipped(sourceSite, post.id(), post.title(), "Post ignorado: " + reason);
         }
-
-        log.info("Iniciando sync [{}] origem={} título={}", sourceSite.displayName(), post.id(), post.title());
 
         CategoryMatchResult categoryMatch = categorySyncService.localizarExistentes(payload.categories());
         if (!categoryMatch.hasExistingCategory()) {
             String received = categoryMatch.missing().isEmpty()
                     ? "nenhuma categoria no payload"
                     : String.join(", ", categoryMatch.missing());
-            log.warn("Post origem {} [{}] não será sincronizado: nenhuma categoria existe no Dentro do Eixo. Categorias recebidas: {}",
-                    post.id(), sourceSite.displayName(), received);
-            return SyncResult.skipped(sourceSite, post.id(), post.title(),
-                    "Categoria não cadastrada no destino: " + received);
-        }
-        if (!categoryMatch.missing().isEmpty()) {
-            log.warn("Post origem {} [{}] segue apenas com categorias já cadastradas {}. Ignoradas: {}",
-                    post.id(), sourceSite.displayName(), categoryMatch.found(), categoryMatch.missing());
+            String reason = "categoria não cadastrada no destino [" + received + "]";
+            log.warn(summarize(sourceSite, "SKIP", post, null, categoryMatch, null, 0, null, reason));
+            return SyncResult.skipped(sourceSite, post.id(), post.title(), reason);
         }
 
         Map<Long, Long> categoryMap = categoryMatch.sourceToDestinationIds();
@@ -82,17 +76,18 @@ public class PostReplicationService {
 
         Optional<Long> existingPostId = findExistingPost(sourceSite, post);
         if ("trash".equalsIgnoreCase(post.status()) && existingPostId.isEmpty()) {
-            log.info("Post origem {} está em trash e ainda não existe no destino; nada a criar", post.id());
-            return SyncResult.skipped(sourceSite, post.id(), post.title(), "Post em trash sem correspondente no destino");
+            String reason = "post em trash sem correspondente no destino";
+            log.info(summarize(sourceSite, "SKIP", post, null, categoryMatch, null, tagMap.size(), null, reason));
+            return SyncResult.skipped(sourceSite, post.id(), post.title(), reason);
         }
 
-        Long featuredMediaId = mediaSyncService.sincronizar(payload.featuredImage(), existingPostId.orElse(null));
+        MediaSyncResult media = mediaSyncService.sincronizar(payload.featuredImage(), existingPostId.orElse(null));
 
         WpPostResponse destination = postSyncService.sincronizar(
                 post,
                 new ArrayList<>(categoryMap.values()),
                 new ArrayList<>(tagMap.values()),
-                featuredMediaId,
+                media.id(),
                 existingPostId.orElse(null)
         );
 
@@ -106,8 +101,8 @@ public class PostReplicationService {
         );
 
         boolean created = existingPostId.isEmpty();
-        log.info("Sync concluído [{}] origem={} destino={} ação={}",
-                sourceSite.displayName(), post.id(), destination.id(), created ? "CREATE" : "UPDATE");
+        String action = created ? "CREATE" : "UPDATE";
+        log.info(summarize(sourceSite, action, post, destination, categoryMatch, media, tagMap.size(), destination.link(), null));
 
         if (created) {
             return SyncResult.created(sourceSite, post.id(), destination.id(), destination.link(), post.title());
@@ -119,18 +114,10 @@ public class PostReplicationService {
         if (metaRepository.isPresent()) {
             Optional<Long> fromMeta = metaRepository.get().findPostIdBySource(sourceSite, post.id());
             if (fromMeta.isPresent()) {
-                log.info("Post destino {} localizado via _source_post_id={}", fromMeta.get(), post.id());
                 return fromMeta;
             }
         }
-
-        Optional<Long> fromSlug = wordPressApiClient.findPostBySlug(post.slug()).map(WpPostResponse::id);
-        if (fromSlug.isPresent()) {
-            log.warn("Post destino {} localizado apenas pelo slug '{}'. "
-                            + "Ative wordpress.mysql.enabled para identificar origem com segurança.",
-                    fromSlug.get(), post.slug());
-        }
-        return fromSlug;
+        return wordPressApiClient.findPostBySlug(post.slug()).map(WpPostResponse::id);
     }
 
     private void validar(WordPressWebhookPayload payload, SourceSite sourceSite) {
@@ -153,5 +140,53 @@ public class PostReplicationService {
         }
         String status = post.status();
         return status != null && SKIP_STATUSES.contains(status.toLowerCase());
+    }
+
+    private static String summarize(SourceSite sourceSite,
+                                    String action,
+                                    SourcePost post,
+                                    WpPostResponse destination,
+                                    CategoryMatchResult categories,
+                                    MediaSyncResult media,
+                                    int tagCount,
+                                    String destinationUrl,
+                                    String skipReason) {
+        StringBuilder line = new StringBuilder();
+        line.append('[').append(sourceSite.displayName()).append("] ")
+                .append(action)
+                .append(" origem=").append(post.id());
+        if (destination != null && destination.id() != null) {
+            line.append(" destino=").append(destination.id());
+        }
+        line.append(" \"").append(nullToEmpty(post.title())).append('"');
+        if (categories != null) {
+            if (!categories.found().isEmpty()) {
+                line.append(" categorias=").append(join(categories.found()));
+            }
+            if (!categories.missing().isEmpty()) {
+                line.append(" ignoradas=").append(join(categories.missing()));
+            }
+        }
+        if (tagCount > 0) {
+            line.append(" tags=").append(tagCount);
+        }
+        if (media != null) {
+            line.append(" mídia=").append(media.status());
+        }
+        if (destinationUrl != null && !destinationUrl.isBlank()) {
+            line.append(" url=").append(destinationUrl);
+        }
+        if (skipReason != null && !skipReason.isBlank()) {
+            line.append(" motivo=").append(skipReason);
+        }
+        return line.toString();
+    }
+
+    private static String join(List<String> values) {
+        return String.join(", ", values);
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

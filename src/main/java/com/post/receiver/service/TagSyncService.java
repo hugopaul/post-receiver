@@ -4,8 +4,6 @@ import com.post.receiver.client.WordPressApiClient;
 import com.post.receiver.dto.webhook.SourceTerm;
 import com.post.receiver.dto.wordpress.WpTermResponse;
 import com.post.receiver.exception.WordPressSyncException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -14,8 +12,6 @@ import java.util.Map;
 
 @Service
 public class TagSyncService {
-
-    private static final Logger log = LoggerFactory.getLogger(TagSyncService.class);
 
     private final WordPressApiClient wordPressApiClient;
 
@@ -39,7 +35,6 @@ public class TagSyncService {
                 sourceToDestination.put(destinationId, destinationId);
             }
         }
-        log.info("Tags sincronizadas: {}", sourceToDestination);
         return sourceToDestination;
     }
 
@@ -47,10 +42,7 @@ public class TagSyncService {
         String slug = tag.slug();
         if (slug != null && !slug.isBlank()) {
             return wordPressApiClient.findTagBySlug(slug)
-                    .map(existing -> {
-                        log.info("Tag existente slug={} id={}", slug, existing.id());
-                        return existing.id();
-                    })
+                    .map(WpTermResponse::id)
                     .orElseGet(() -> create(tag.name(), slug));
         }
         return create(tag.name(), null);
@@ -61,7 +53,6 @@ public class TagSyncService {
         if (created == null || created.id() == null) {
             throw new WordPressSyncException("WordPress destino não retornou ID ao criar tag " + name);
         }
-        log.info("Tag criada name={} slug={} id={}", name, slug, created.id());
         return created.id();
     }
 }

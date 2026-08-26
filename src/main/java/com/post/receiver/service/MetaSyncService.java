@@ -4,8 +4,6 @@ import com.post.receiver.config.WordPressProperties;
 import com.post.receiver.domain.SourceSite;
 import com.post.receiver.dto.webhook.FeaturedImage;
 import com.post.receiver.repository.WordPressMetaRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +13,6 @@ import java.util.Optional;
 
 @Service
 public class MetaSyncService {
-
-    private static final Logger log = LoggerFactory.getLogger(MetaSyncService.class);
 
     private final Optional<WordPressMetaRepository> metaRepository;
     private final WordPressProperties properties;
@@ -33,8 +29,6 @@ public class MetaSyncService {
                             FeaturedImage featuredImage,
                             Map<Long, Long> categoryIdMap) {
         if (metaRepository.isEmpty()) {
-            log.warn("MySQL do WordPress desabilitado: metas _source_site/_source_post_id não serão gravados. "
-                    + "Updates futuros dependerão do slug.");
             return;
         }
 
@@ -67,13 +61,11 @@ public class MetaSyncService {
             if ("rank_math_primary_category".equals(key)) {
                 value = remapPrimaryCategory(value, categoryIdMap);
                 if (value == null) {
-                    log.warn("rank_math_primary_category {} não pôde ser remapado e será ignorado", entry.getValue());
                     continue;
                 }
             }
             repository.upsertMeta(destinationPostId, key, value);
         }
-        log.info("Metas copiados para o post destino {}", destinationPostId);
     }
 
     private boolean shouldCopy(String key, WordPressProperties.Meta metaConfig) {

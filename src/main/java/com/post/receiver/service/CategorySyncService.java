@@ -3,8 +3,6 @@ package com.post.receiver.service;
 import com.post.receiver.client.WordPressApiClient;
 import com.post.receiver.dto.CategoryMatchResult;
 import com.post.receiver.dto.webhook.SourceTerm;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,8 +12,6 @@ import java.util.Map;
 
 @Service
 public class CategorySyncService {
-
-    private static final Logger log = LoggerFactory.getLogger(CategorySyncService.class);
 
     private final WordPressApiClient wordPressApiClient;
 
@@ -40,7 +36,6 @@ public class CategorySyncService {
             String slug = category.slug();
             if (slug == null || slug.isBlank()) {
                 missing.add(label);
-                log.warn("Categoria sem slug ignorada: {}", label);
                 continue;
             }
 
@@ -52,12 +47,8 @@ public class CategorySyncService {
                         } else {
                             sourceToDestination.put(destinationId, destinationId);
                         }
-                        found.add(label + " -> destino id=" + destinationId);
-                        log.info("Categoria já cadastrada no destino slug={} id={}", slug, destinationId);
-                    }, () -> {
-                        missing.add(label);
-                        log.warn("Categoria não cadastrada no Dentro do Eixo: {}", label);
-                    });
+                        found.add(label);
+                    }, () -> missing.add(label));
         }
 
         return new CategoryMatchResult(sourceToDestination, found, missing);

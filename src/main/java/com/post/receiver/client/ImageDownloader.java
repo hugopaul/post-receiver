@@ -2,8 +2,6 @@ package com.post.receiver.client;
 
 import com.post.receiver.dto.client.DownloadedImage;
 import com.post.receiver.exception.WordPressSyncException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +17,6 @@ import java.util.Optional;
 
 @Component
 public class ImageDownloader {
-
-    private static final Logger log = LoggerFactory.getLogger(ImageDownloader.class);
 
     private static final Map<String, String> EXTENSION_CONTENT_TYPES = Map.of(
             "jpg", "image/jpeg",
@@ -39,7 +35,6 @@ public class ImageDownloader {
     }
 
     public DownloadedImage download(String url) {
-        log.info("Baixando imagem destacada: {}", url);
         try {
             ResponseEntity<byte[]> response = restClient.get()
                     .uri(URI.create(url))
@@ -64,7 +59,6 @@ public class ImageDownloader {
                 .filter(type -> type.startsWith("image/"))
                 .map(type -> type.split(";")[0].trim())
                 .orElseGet(() -> contentTypeFromFilename(filename));
-        log.info("Imagem baixada: {} ({} bytes, {})", filename, body.length, contentType);
         return new DownloadedImage(body, filename, contentType);
     }
 

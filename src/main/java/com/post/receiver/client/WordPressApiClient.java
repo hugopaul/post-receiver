@@ -7,8 +7,6 @@ import com.post.receiver.dto.wordpress.WpPostResponse;
 import com.post.receiver.dto.wordpress.WpTermRequest;
 import com.post.receiver.dto.wordpress.WpTermResponse;
 import com.post.receiver.exception.WordPressSyncException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -26,8 +24,6 @@ import java.util.Optional;
 
 @Component
 public class WordPressApiClient {
-
-    private static final Logger log = LoggerFactory.getLogger(WordPressApiClient.class);
 
     private final RestClient restClient;
     private final WordPressProperties properties;
@@ -204,7 +200,6 @@ public class WordPressApiClient {
                 response.getStatusCode(),
                 body
         );
-        log.error(message);
         throw new WordPressSyncException(message, response.getStatusCode().value());
     }
 }
