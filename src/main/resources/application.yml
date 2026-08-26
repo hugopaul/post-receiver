@@ -45,6 +45,8 @@ wordpress:
       - cta-cta_manchete
       - rank_math_primary_category
       - rank_math_seo_score
+      - _seopress_analysis_target_kw
+      - _seopress_robots_primary_cat
     ignored-keys:
       - _edit_lock
       - _edit_last
@@ -52,10 +54,13 @@ wordpress:
       - _wp_old_slug
       - _encloseme
       - _pingme
+      - classic-editor-remember
       - rank_math_internal_links_processed
       - rank_math_contentai_score
       - rank_math_analytic_object_id
       - _elementor_page_assets
+      - _seopress_redirections_type
+      - _seopress_redirections_logged_status
     ignored-prefixes:
       - _oembed_
       - _oembed_time_
