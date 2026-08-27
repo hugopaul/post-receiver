@@ -34,6 +34,7 @@ public class PostReplicationService {
     private final MetaSyncService metaSyncService;
     private final WordPressApiClient wordPressApiClient;
     private final Optional<WordPressMetaRepository> metaRepository;
+    private final SourcePostLockRegistry sourcePostLockRegistry;
 
     public PostReplicationService(CategorySyncService categorySyncService,
                                   TagSyncService tagSyncService,
@@ -41,7 +42,8 @@ public class PostReplicationService {
                                   PostSyncService postSyncService,
                                   MetaSyncService metaSyncService,
                                   WordPressApiClient wordPressApiClient,
-                                  ObjectProvider<WordPressMetaRepository> metaRepository) {
+                                  ObjectProvider<WordPressMetaRepository> metaRepository,
+                                  SourcePostLockRegistry sourcePostLockRegistry) {
         this.categorySyncService = categorySyncService;
         this.tagSyncService = tagSyncService;
         this.mediaSyncService = mediaSyncService;
@@ -49,12 +51,16 @@ public class PostReplicationService {
         this.metaSyncService = metaSyncService;
         this.wordPressApiClient = wordPressApiClient;
         this.metaRepository = Optional.ofNullable(metaRepository.getIfAvailable());
+        this.sourcePostLockRegistry = sourcePostLockRegistry;
     }
 
     public SyncResult sincronizar(WordPressWebhookPayload payload, SourceSite sourceSite) {
         validar(payload, sourceSite);
-
         SourcePost post = payload.post();
+        return sourcePostLockRegistry.withLock(sourceSite, post.id(), () -> sincronizarComLock(payload, sourceSite, post));
+    }
+
+    private SyncResult sincronizarComLock(WordPressWebhookPayload payload, SourceSite sourceSite, SourcePost post) {
         if (shouldSkip(post)) {
             String reason = "type=" + post.type() + " status=" + post.status();
             log.info(summarize(sourceSite, "SKIP", post, null, null, null, 0, null, reason));
