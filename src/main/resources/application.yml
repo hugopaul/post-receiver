@@ -7,12 +7,10 @@ server:
   servlet:
     context-path: /
 
-# Preencha os origins permitidos quando souber quem chama a API pelo browser.
-# Lista vazia = CORS ainda não restringe. Webhooks WordPress (server-to-server) não usam CORS.
 cors:
-  allowed-origins: []
-    # - https://acordadf.com.br
-    # - https://dfmobilidade.com.br
+  allowed-origins:
+    - https://acordadf.com.br
+    - https://dfmobilidade.com.br
 
 logging:
   level:
