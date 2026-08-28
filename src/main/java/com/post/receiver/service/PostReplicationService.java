@@ -77,6 +77,7 @@ public class PostReplicationService {
             return SyncResult.skipped(sourceSite, post.id(), post.title(), reason);
         }
 
+        categoryMatch = categorySyncService.complementarPorTags(categoryMatch, payload.tags());
         Map<Long, Long> categoryMap = categoryMatch.sourceToDestinationIds();
         Map<Long, Long> tagMap = tagSyncService.sincronizar(payload.tags());
 
@@ -91,7 +92,7 @@ public class PostReplicationService {
 
         WpPostResponse destination = postSyncService.sincronizar(
                 post,
-                new ArrayList<>(categoryMap.values()),
+                categoryMatch.destinationIds(),
                 new ArrayList<>(tagMap.values()),
                 media.id(),
                 existingPostId.orElse(null)
@@ -168,6 +169,9 @@ public class PostReplicationService {
         if (categories != null) {
             if (!categories.found().isEmpty()) {
                 line.append(" categorias=").append(join(categories.found()));
+            }
+            if (categories.fromTags() != null && !categories.fromTags().isEmpty()) {
+                line.append(" categoriasViaTags=").append(join(categories.fromTags()));
             }
             if (!categories.missing().isEmpty()) {
                 line.append(" ignoradas=").append(join(categories.missing()));
